@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "Worker.hpp"
 #include "Service.hpp"
+#include "ServiceMsg.hpp"
 using namespace std;
 class ShitNet
 {
@@ -29,10 +30,10 @@ public:
 
 public:
     //发送消息
-    void Send(uint32_t total, shared_ptr<BaseMsg> msg);
+    void Send(uint32_t toId, shared_ptr<BaseMsg> msg);
     //全局队列操作
     shared_ptr<Service> PopGlobalQueue();
-    void pushGlobalQueue(shared_ptr<Service> srv);
+    void PushGlobalQueue(shared_ptr<Service> srv);
     uint32_t NewService(shared_ptr<string> type); //增加服务
     void Killservice(uint32_t id);                //仅服务自己调用 kill 服务
     shared_ptr<Service> GetService(uint32_t id);  // 查找服务
@@ -40,4 +41,13 @@ public:
     void Wait();                                  //阻塞
     ShitNet(/* args */) = default;
     ~ShitNet() = default;
+    shared_ptr<BaseMsg> testMakeMsg(uint32_t source, char *buff, int len)
+    {
+        auto msg = make_shared<ServiceMsg>();
+        msg->type = BaseMsg::Type::SERVICE;
+        msg->sources = source;
+        msg->buf = shared_ptr<char>(buff);
+        msg->size = len;
+        return msg;
+    }
 };

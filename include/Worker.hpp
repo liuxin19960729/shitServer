@@ -14,5 +14,5 @@ public:
     Worker(/* args */) = default;
     ~Worker() = default;
     void operator()(); //函数符号重载
-    void checkAndPutGlobal(shared_ptr<Service> srv);
+    void CheckAndPutGlobal(shared_ptr<Service> srv);
 };

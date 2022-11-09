@@ -50,7 +50,7 @@ uint32_t ShitNet::NewService(shared_ptr<string> type)
         servicesMap.emplace(srv->id, srv);
     }
     pthread_rwlock_unlock(&servicesMapLock); //释放写锁
-    srv->onInit();
+    srv->OnInit();
     return srv->id;
 }
 
@@ -74,7 +74,7 @@ void ShitNet::Killservice(uint32_t id)
     shared_ptr<Service> srv = GetService(id);
     if (srv)
     {
-        srv->onExit();
+        srv->OnExit();
         srv->isExiting = true; //用于告诉service 和 ShitNet 切断联系的指示 ,(可能从ShitNet切断但是正在消息发送)
         pthread_rwlock_wrlock(&servicesMapLock);
         {
@@ -100,7 +100,7 @@ shared_ptr<Service> ShitNet::PopGlobalQueue()
     return srv;
 }
 
-void ShitNet::pushGlobalQueue(shared_ptr<Service> srv)
+void ShitNet::PushGlobalQueue(shared_ptr<Service> srv)
 {
     pthread_spin_lock(&globalQueueLock);
     {
@@ -116,13 +116,13 @@ void ShitNet::Send(uint32_t toId, shared_ptr<BaseMsg> msg)
     {
         bool hasPush = false;
         // 将消息加入对应的服务
-        toSrv->pushMsg(msg);
+        toSrv->PushMsg(msg);
         pthread_spin_lock(&toSrv->globalLock);
         {
             //没有在全局对垒加入对列
             if (!toSrv->inGlobal)
             {
-                pushGlobalQueue(toSrv);
+                PushGlobalQueue(toSrv);
                 toSrv->inGlobal = true;
                 hasPush = true;
             }

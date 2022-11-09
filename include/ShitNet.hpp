@@ -17,10 +17,12 @@ private:
     int globalLen = 0;
     pthread_spinlock_t globalQueueLock; // 全局队列锁
 
+    pthread_mutex_t sleepMtx;
+    pthread_cond_t sleepCond;
+    int sleepCount = 0; //休眠线程数
 private:
     //开启工作线程
-    void
-    StartWorker();
+    void StartWorker();
 
 public:
     static ShitNet *Inst();
@@ -29,6 +31,10 @@ public:
     pthread_rwlock_t servicesMapLock;
 
 public:
+    //唤醒工作线程
+    void CheckAndWeakUp();
+    //工作线程等待(仅工作线程调用)
+    void WorkerWait();
     //发送消息
     void Send(uint32_t toId, shared_ptr<BaseMsg> msg);
     //全局队列操作

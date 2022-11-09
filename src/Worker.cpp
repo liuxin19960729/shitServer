@@ -25,7 +25,7 @@ void Worker::operator()()
         }
         else
         {
-            usleep(1e2);
+            ShitNet::Inst()->WorkerWait(); //休眠
         }
     }
 }

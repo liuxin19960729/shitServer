@@ -7,7 +7,7 @@ class ShitNet;
 class Worker
 {
 private:
-    /* data */
+
 public:
     int id;      // Worker 编号
     int eachNum; //每次处理多次条数据

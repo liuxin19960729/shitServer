@@ -25,6 +25,8 @@ void ShitNet::Start()
     cout << "Hello Shitnet" << endl;
     pthread_rwlock_init(&servicesMapLock, nullptr);
     pthread_spin_init(&globalQueueLock, PTHREAD_PROCESS_PRIVATE);
+    pthread_mutex_init(&sleepMtx, nullptr);
+    pthread_cond_init(&sleepCond, nullptr);
     StartWorker();
 }
 
@@ -129,7 +131,29 @@ void ShitNet::Send(uint32_t toId, shared_ptr<BaseMsg> msg)
         }
         pthread_spin_unlock(&toSrv->globalLock);
 
-        //唤起进程
+        if (hasPush)
+            CheckAndWeakUp();
+    }
+}
+void ShitNet::WorkerWait()
+{
+    pthread_mutex_lock(&sleepMtx);
+    sleepCount++;
+    pthread_cond_wait(&sleepCond, &sleepMtx); //休眠 解锁 ,
+    sleepCount--;                             //唤醒后 抢到锁开始执行
+    pthread_mutex_unlock(&sleepMtx);
+}
+//唤醒任意一个线程 pthread_cond_signal 有一定开销
+void ShitNet::CheckAndWeakUp()
+{
+    // 1 检查是否所有线程都在工作 无需 唤醒
+    if (sleepCount == 0)
+        return;
+    // 2 检查当前服务是否应付当前任务 来判断是否唤醒
+    if (Worker_NUM - sleepCount <= globalLen) //不能应付当前任务
+    {
+        cout << "wake up thread" << endl;
+        pthread_cond_signal(&sleepCond);
     }
 }
 // ShitNet::ShitNet(/* args */)

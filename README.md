@@ -72,3 +72,10 @@ worker[0] 第6条，worker[2] 第8条消息开始执行
 eachNum 有大有小为了达到及时和非及时的平衡
 
 ```
+## 后台程序
+```
+#include <iostream>
+demond();
+
+左信号处理方法
+```

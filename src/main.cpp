@@ -1,4 +1,5 @@
 #include <iostream>
+
 #include "ShitNet.hpp"
 using namespace std;
 
@@ -17,6 +18,7 @@ void test()
 
 int main(int argc, char const *argv[])
 {
+  
     ShitNet::Inst()->Start();
     test();
     ShitNet::Inst()->Wait(); //阻塞

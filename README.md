@@ -199,9 +199,28 @@ epoll_create()
 ```
 events:
   触发模式
-  监听什么
+     EPOLLET 对应的文件描述符有事件发生
+  监听事件
     EPOLLIN 读
     EPOLLOUT 写
+    EPOLLERR 文件描述符发生错误
+   
+
+    EPOLLPRI 对应的文件描述符有紧急数据可读
+    EPOLLHUP 对应的文件描述符被挂断
+
+
+读
+EPOLLET|EPOLLET
+
+写
+EPOLLET|EPOLLOUT
+
+错误
+EPOLLET|EPOLLIN|EPOLLOUT|EPOLLERR
+
+可读可写
+EPOLLET|EPOLLIN|EPOLLOUT
 ```
 ### epoll_wait
 #### epoll_wait 有消息时

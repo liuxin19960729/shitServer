@@ -10,8 +10,13 @@ void SocketWorker::operator()()
 {
     while (true)
     {
-        cout << "SocketWorker working" << endl;
-        usleep(1e3);
+        const int EVENT_SIZE = 64;
+        epoll_event events[EVENT_SIZE];
+        int eventCount = epoll_wait(epollFd, events, EVENT_SIZE, -1); //-1 代表会一直等待到有事件发送
+        for (size_t i = 0; i < eventCount; i++)
+        {
+            OnEvent(events[i]);
+        }
     }
 }
 

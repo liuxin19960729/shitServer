@@ -42,6 +42,13 @@ shared_ptr<BaseMsg> Service::PopMsg()
 void Service::OnExit()
 {
     cout << "[" << id << "] onExit" << endl;
+    lua_getglobal(luaState, "OnExit");
+    int isOk = lua_pcall(luaState, 0, 0, 0);
+    if (isOk != 0)
+    {
+        cout << "call lua onExit fail: " << lua_tostring(luaState, -1) << endl;
+    }
+
     //关闭lua虚拟机
     lua_close(luaState);
 }
@@ -52,9 +59,23 @@ void Service::OnInit()
     luaL_openlibs(luaState);    //开启标准库的使用
     string filename = "../service/" + *type + "/init.lua";
     // 0 成功  1 失败
-    if (luaL_dofile(luaState, filename.c_str()) == 1)
+    int isOk = luaL_dofile(luaState, filename.c_str());
+    if (isOk == 1)
     {
         cout << "run lua fail:" << lua_tostring(luaState, -1) << endl;
+        return;
+    }
+
+    lua_getglobal(luaState, "OnInit"); // lua 脚本 OnInt() 压栈
+    lua_pushinteger(luaState, id);     //整数压栈
+    // (luaState,参数个数,返回值个数,msgh)
+    // msgh:调用失败采取处理方式  默认方式(0)  错误非0 并且把错误消息压入栈中
+    isOk = lua_pcall(luaState, 1, 0, 0);
+    if (isOk != 0)
+    {
+        // lua_tostring
+        //去除错误时压入栈的消息 -1 把指定的索引转为c string
+        cout << "call lu OnInit fail:" << lua_tostring(luaState, -1) << endl;
     }
 }
 
@@ -159,7 +180,6 @@ void Service::OnSocketWritable(int fd)
 {
     cout << "OnSocketWritable fd: " << fd << endl;
     auto w = writers[fd];
- 
 }
 void Service::OnSocketClose(int fd)
 {

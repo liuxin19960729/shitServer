@@ -4,6 +4,8 @@
 #include "Worker.hpp"
 #include "Service.hpp"
 #include "ServiceMsg.hpp"
+#include "SocketWorker.hpp"
+#include "Connect.hpp"
 using namespace std;
 class ShitNet
 {
@@ -20,9 +22,18 @@ private:
     pthread_mutex_t sleepMtx;
     pthread_cond_t sleepCond;
     int sleepCount = 0; //休眠线程数
+    // Socket Worker
+    SocketWorker *socketWorker;
+    thread *socketThread;
+
+    // Connet
+    unordered_map<uint32_t, shared_ptr<Connect>> connects;
+    pthread_rwlock_t connetsLock;
+
 private:
     //开启工作线程
     void StartWorker();
+    void StartSocket();
 
 public:
     static ShitNet *Inst();
@@ -47,6 +58,11 @@ public:
     void Wait();                                  //阻塞
     ShitNet(/* args */) = default;
     ~ShitNet() = default;
+
+    // Connects
+    int AddConnect(int fd, uint32_t id, Connect::TYPE type);
+    shared_ptr<Connect> GetConnct(int fd);
+    bool RemoveConnet(int fd);
     shared_ptr<BaseMsg> testMakeMsg(uint32_t source, char *buff, int len)
     {
         auto msg = make_shared<ServiceMsg>();

@@ -27,7 +27,16 @@ void ShitNet::Start()
     pthread_spin_init(&globalQueueLock, PTHREAD_PROCESS_PRIVATE);
     pthread_mutex_init(&sleepMtx, nullptr);
     pthread_cond_init(&sleepCond, nullptr);
+    pthread_rwlock_init(&connetsLock, nullptr);
     StartWorker();
+    StartSocket();
+}
+
+void ShitNet::StartSocket()
+{
+    socketWorker = new SocketWorker();
+    socketWorker->Init();
+    socketThread = new thread(*socketWorker);
 }
 
 void ShitNet::StartWorker()
@@ -156,6 +165,48 @@ void ShitNet::CheckAndWeakUp()
         pthread_cond_signal(&sleepCond);
     }
 }
+
+int ShitNet::AddConnect(int fd, uint32_t id, Connect::TYPE type)
+{
+    auto conn = make_shared<Connect>();
+    conn->fd = fd;
+    conn->serviceId = id;
+    conn->type = type;
+
+    pthread_rwlock_wrlock(&connetsLock);
+    {
+        connects.emplace(fd, conn);
+    }
+    pthread_rwlock_unlock(&connetsLock);
+    return fd;
+}
+
+shared_ptr<Connect> ShitNet::GetConnct(int fd)
+{
+    shared_ptr<Connect> conn = nullptr;
+    pthread_rwlock_rdlock(&connetsLock);
+    {
+        auto iter = connects.find(fd);
+        if (iter != connects.end())
+        {
+            conn = iter->second;
+        }
+    }
+    pthread_rwlock_unlock(&connetsLock);
+    return conn;
+}
+
+bool ShitNet::RemoveConnet(int fd)
+{
+    int result;
+    pthread_rwlock_wrlock(&connetsLock);
+    {
+        result = connects.erase(fd);
+    }
+    pthread_rwlock_unlock(&connetsLock);
+    return result == 1;
+}
+
 // ShitNet::ShitNet(/* args */)
 // {
 // }

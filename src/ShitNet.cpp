@@ -1,5 +1,5 @@
+#include <signal.h>
 #include "ShitNet.hpp"
-
 ShitNet *ShitNet::Inst()
 {
     if (!!!_ins)
@@ -23,6 +23,8 @@ void ShitNet::Wait()
 void ShitNet::Start()
 {
     cout << "Hello Shitnet" << endl;
+    // 忽略 SIGPIPE 信号  socket() 已经close() 调用 write()
+    signal(SIGPIPE, SIG_IGN);
     pthread_rwlock_init(&servicesMapLock, nullptr);
     pthread_spin_init(&globalQueueLock, PTHREAD_PROCESS_PRIVATE);
     pthread_mutex_init(&sleepMtx, nullptr);
@@ -166,11 +168,11 @@ void ShitNet::CheckAndWeakUp()
     }
 }
 
-int ShitNet::AddConnect(int fd, uint32_t id, Connect::TYPE type)
+int ShitNet::AddConnect(int fd, uint32_t serviceId, Connect::TYPE type)
 {
     auto conn = make_shared<Connect>();
     conn->fd = fd;
-    conn->serviceId = id;
+    conn->serviceId = serviceId;
     conn->type = type;
 
     pthread_rwlock_wrlock(&connetsLock);
@@ -207,6 +209,54 @@ bool ShitNet::RemoveConnet(int fd)
     return result == 1;
 }
 
+int ShitNet::Listen(const uint32_t port, const uint32_t serviceId)
+{
+    //创建socket
+    int listenFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (listenFd <= 0)
+    {
+        cout << "listen error,listenFd<=0" << endl;
+        return -1;
+    }
+    //设置非阻塞
+    fcntl(listenFd, F_SETFL, O_NONBLOCK);
+    sockaddr_in addr;
+    addr.sin_family = AF_INET; // ipv4;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY); //接收任意连接
+    int r = bind(listenFd, (sockaddr *)&addr, sizeof(addr));
+    if (r == -1)
+    {
+        cout << "listen error,bind fail" << endl;
+        return -1;
+    }
+
+    // listen
+    r = listen(listenFd, 64); //最多同时处理64个三次握手的操作
+    if (r < 0)
+    {
+        cout << "listen error,listen fail" << endl;
+        return -1;
+    }
+    // 添加到管理结构ƒ
+    AddConnect(listenFd, serviceId, Connect::TYPE::LISTEN);
+    // epoll 事件 跨线程
+    socketWorker->AddEvent(listenFd);
+    return listenFd;
+}
+
+void ShitNet::CloseConnect(const uint32_t fd)
+{
+    // 删除Connnet 对象
+    bool succ = RemoveConnet(fd);
+    //关闭套接字
+    close(fd);
+    //跨线程操作 删除 epoll 事件列表的事件
+    if (succ)
+    {
+        socketWorker->RemoveEvent(fd);
+    }
+}
 // ShitNet::ShitNet(/* args */)
 // {
 // }

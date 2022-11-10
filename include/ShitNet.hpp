@@ -1,6 +1,10 @@
 #pragma once
 #include <vector>
 #include <unordered_map>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "Worker.hpp"
 #include "Service.hpp"
 #include "ServiceMsg.hpp"
@@ -60,9 +64,12 @@ public:
     ~ShitNet() = default;
 
     // Connects
-    int AddConnect(int fd, uint32_t id, Connect::TYPE type);
+    int AddConnect(int fd, uint32_t serviceId, Connect::TYPE type);
     shared_ptr<Connect> GetConnct(int fd);
     bool RemoveConnet(int fd);
+    //网路链接操作
+    int Listen(const uint32_t port, const uint32_t serviceId);
+    void CloseConnect(const uint32_t fd);
     shared_ptr<BaseMsg> testMakeMsg(uint32_t source, char *buff, int len)
     {
         auto msg = make_shared<ServiceMsg>();

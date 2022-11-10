@@ -9,6 +9,6 @@ public:
     int clientFd;
 
 public:
-    SocketAcceptMsg(/* args */);
-    ~SocketAcceptMsg();
+    SocketAcceptMsg(/* args */) = default;
+    ~SocketAcceptMsg() = default;
 };

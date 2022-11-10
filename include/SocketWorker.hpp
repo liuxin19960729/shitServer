@@ -14,8 +14,8 @@ private:
 
 private:
     void OnEvent(epoll_event ev);
-    void OnAccept(shared_ptr<Connect> connet);
-    void OnRW(shared_ptr<Connect> connet, bool r, bool w);
+    void OnAccept(shared_ptr<Connect> connect);
+    void OnRW(shared_ptr<Connect> connect, bool r, bool w);
 
 public:
     void Init();       //初始化函数

@@ -229,3 +229,64 @@ EPOLLET|EPOLLIN|EPOLLOUT
 ![epoll_wait 无消息是](./img/epoll_wait_%E6%97%A0%E6%B6%88%E6%81%AF%E7%A4%BA%E6%84%8F%E5%9B%BE.png)
 #### epoll_waait 有消息唤醒IO 用户线程
 ![epoll_waait 有消息唤醒IO 用户线程](./img/epoll_wait%E5%94%A4%E9%86%92%E7%BA%BF%E7%A8%8B%E7%A4%BA%E6%84%8F%E5%9B%BE.png)
+
+### 发送数据
+```
+socket write() 操作
+
+socket 内部有一个接收数据的缓冲区
+
+int rlen= write(fd,len)
+
+if(rlen<len){
+    //len的长度大约sockt 的缓存区 只传了部分数据
+    // 为完全写入在次监听write事件
+}
+```
+### EPOLL 水平触发和边缘触发的区别
+![水平触发和边缘触发的区别](./img/epoll%20%E6%B0%B4%E5%B9%B3%E8%A7%A6%E5%8F%91%E5%92%8C%E8%BE%B9%E7%BC%98%E8%A7%A6%E5%8F%91%E7%9A%84%E5%8C%BA%E5%88%AB.png)
+```
+client-->send(welove)
+
+socket.read(len3);// wel
+
+水平触发:
+    epoll_wait() 立即返回 返回可读事件
+边缘触发模式
+    epoll_wait() 程序进入休眠模式
+    没读完的数据丢弃
+```
+## 网络服务的步骤
+```
+1.socket 监听socket 创建
+2.bind
+3.listen
+4.添加到epoll
+
+......
+?. accept() 返回的客户端 fd 添加到 epoll
+....
+```
+## epoll listenfd client fd的注册图
+![epoll listenfd client fd的注册图](./img/epoll_listenFd_clientfd%E7%9A%84%E6%B3%A8%E5%86%8C%E5%9B%BE.png)
+
+## epoll event 事件类型通知
+![epoll event 事件类型通知](./img/epoll_event_%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B.png)
+```
+只需要再读写事件中关注错误
+```
+## Lua
+```
+luaL_State * luaL_newState();
+
+luaL_openlibs(lua_State *L);
+   开启标准库(全部)
+   math  io  string 等
+
+luaL_dofile(lua_State *L ,const char *filename);
+    加载并运行lua
+
+
+lua_close() 
+销毁虚拟机
+```

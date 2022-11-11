@@ -1,5 +1,6 @@
 #include "Service.hpp"
 #include "ShitNet.hpp"
+#include "LuaAPI.hpp"
 Service::Service(/* args */)
 {
     // PTHREAD_PROCESS_PRIVATE 进程不共享
@@ -57,6 +58,7 @@ void Service::OnInit()
     cout << "[" << id << "] onInit" << endl;
     luaState = luaL_newstate(); //创建虚拟机
     luaL_openlibs(luaState);    //开启标准库的使用
+    LuaAPI::Register(luaState); //给服务注册c/c++ 函数
     string filename = "../service/" + *type + "/init.lua";
     // 0 成功  1 失败
     int isOk = luaL_dofile(luaState, filename.c_str());
@@ -164,6 +166,14 @@ void Service::OnRWMsg(shared_ptr<SocketRWMsg> msg)
 void Service::OnServiceMsg(shared_ptr<ServiceMsg> msg)
 {
     cout << "OnServiceMsg" << endl;
+    lua_getglobal(luaState, "OnServiceMsg");
+    lua_pushinteger(luaState, msg->source);
+    lua_pushlstring(luaState, msg->buf.get(), msg->size);
+    int isOk = lua_pcall(luaState, 2, 0, 0);
+    if (isOk)
+    {
+        cout << "call lua OnServiceMsg fail" << endl;
+    }
 }
 void Service::OnSocketData(int fd, const char *buf, int len)
 {

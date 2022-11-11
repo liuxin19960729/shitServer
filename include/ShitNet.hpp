@@ -70,13 +70,4 @@ public:
     //网路链接操作
     int Listen(const uint32_t port, const uint32_t serviceId);
     void CloseConnect(const uint32_t fd);
-    shared_ptr<BaseMsg> testMakeMsg(uint32_t source, char *buff, int len)
-    {
-        auto msg = make_shared<ServiceMsg>();
-        msg->type = BaseMsg::Type::SERVICE;
-        msg->sources = source;
-        msg->buf = shared_ptr<char>(buff);
-        msg->size = len;
-        return msg;
-    }
 };
